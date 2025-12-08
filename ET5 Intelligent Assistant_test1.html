@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ET5用车管家 - NIO 蔚来</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --nio-teal: #00BEBE;
+            --nio-dark: #202020;
+            --nio-gray: #F5F6F7;
+            --nio-text-secondary: #666666;
+            --nio-white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            color: var(--nio-dark);
+            position: relative;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Left Sidebar Container */
+        .left-sidebar {
+            position: fixed;
+            left: 0;
+            top: 64px;
+            width: 20%;
+            height: calc(100vh - 64px);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            padding: 30px 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        /* Right Background Area */
+        .right-background {
+            position: fixed;
+            left: 20%;
+            top: 64px;
+            width: 80%;
+            height: calc(100vh - 64px);
+            background: url('https://ev-database.org/img/auto/NIO_ET5/NIO_ET5-06@2x.jpg') no-repeat center center;
+            background-size: cover;
+            z-index: 0;
+        }
+
+        .container {
+            display: none;
+        }
+
+        /* Header / Title Bar */
+        .nio-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 64px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            box-shadow: 0 1px 0 rgba(0,0,0,0.06);
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .brand-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            height: 24px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .divider {
+            height: 20px;
+            width: 1px;
+            background: #E0E0E0;
+        }
+
+        .brand-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--nio-dark);
+            letter-spacing: 0.5px;
+        }
+
+        /* Welcome Section in Sidebar */
+        .welcome-section {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .welcome-section h1 {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--nio-dark);
+        }
+
+        .welcome-section p {
+            color: var(--nio-text-secondary);
+            font-size: 13px;
+            line-height: 1.5;
+            margin-bottom: 0;
+        }
+
+        /* Features Grid - Vertical in Sidebar */
+        .features {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px 15px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 15px;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .feature-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 8px 20px rgba(0, 190, 190, 0.15);
+            border-color: var(--nio-teal);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            color: var(--nio-teal);
+            flex-shrink: 0;
+        }
+
+        .feature-text {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--nio-dark);
+            white-space: nowrap;
+        }
+
+        /* Status Indicator */
+        .status-bar {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(0, 190, 190, 0.08);
+            border-radius: 20px;
+            margin-top: 10px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--nio-teal);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            background: var(--nio-teal);
+            opacity: 0.2;
+            animation: pulse 2s infinite;
+        }
+
+        .status-text {
+            color: var(--nio-teal);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.2; }
+            50% { transform: scale(1.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        .chat-placeholder {
+            margin-top: auto;
+            text-align: center;
+            padding-top: 20px;
+        }
+
+
+
+        @media (max-width: 900px) {
+            .left-sidebar {
+                width: 30%;
+            }
+            .right-background {
+                left: 30%;
+                width: 70%;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .left-sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .right-background {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="nio-header">
+        <div class="header-content">
+            <div class="brand-area">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/NIO_logo.svg" alt="NIO" class="brand-logo">
+                <div class="divider"></div>
+                <span class="brand-title">ET5 Intelligent Assistant</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Left Sidebar with Welcome and Features -->
+    <div class="left-sidebar">
+        <div class="welcome-section">
+            <h1>Hi, I'm NOMI</h1>
+            <p>我是您的专属ET5用车管家<br>Always ready to help you</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-dot"></div>
+            <span class="status-text">NOMI Online</span>
+        </div>
+
+        <div style="height: 30px;"></div>
+
+        <div class="features">
+            <a href="https://chargermap.nio.com/pe/h5/static/chargermap#/" target="_blank" class="feature-card">
+                <span class="feature-icon">⚡</span>
+                <span class="feature-text">一键加电</span>
+            </a>
+            
+            <a href="https://chargermap.nio.com/pe/h5/static/chargermap#/" target="_blank" class="feature-card">
+                <span class="feature-icon">🔋</span>
+                <span class="feature-text">一键换电</span>
+            </a>
+            
+            <a href="https://www.nio.cn/nio-service" target="_blank" class="feature-card">
+                <span class="feature-icon">🔧</span>
+                <span class="feature-text">维保查询</span>
+            </a>
+        </div>
+
+        <div class="chat-placeholder">
+            <p style="font-size: 11px; color: #999;">Powered by Tencent Cloud IM</p>
+        </div>
+    </div>
+
+    <!-- Right Background Area -->
+    <div class="right-background"></div>
+
+    <!-- Tencent Cloud IM Script -->
+    <script src="https://tccc.qcloud.com/web/im/imPublish.js?webAppId=0148fd3ab09b7738abd7d5d495428d63"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Interactive effects for feature cards
+            const cards = document.querySelectorAll('.feature-card');
+            cards.forEach(card => {
+                card.addEventListener('click', (e) => {
+                    // Animation
+                    card.style.transform = 'scale(0.95)';
+                    setTimeout(() => card.style.transform = '', 150);
+                    
+                    // Allow default link behavior (navigation)
+                });
+            });
+        });
+    </script>
+</body>
+</html>
